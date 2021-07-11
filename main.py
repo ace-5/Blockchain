@@ -1,8 +1,14 @@
+from functools import singledispatchmethod
+import hashlib
+import json
+from collections import OrderedDict
+
 # GENESIS_BLOCK to initialize blockchain
 GENESIS_BLOCK = {
     'last_hash': '',
     'index': 0,
-    'transactions': []
+    'transactions': [],
+    'proof': 1
 }
 # reward miners to add open transaction to our blockchain
 MINING_REWARD = 10
@@ -22,11 +28,11 @@ def transaction_details():
 
 def add_transaction(receiver, amount, sender):
     """details entered by user is added to list of open transaction"""
-    transaction = {
-        'sender': sender,
-        'receiver': receiver,
-        'amount': amount
-    }
+    transaction = OrderedDict([
+        ('sender', sender),
+        ('receiver', receiver),
+        ('amount', amount)
+    ])
     if check_balance(transaction):
         open_transaction.append(transaction)
         participants.add(sender)
@@ -64,19 +70,36 @@ def check_balance(transaction):
 
 
 def hash_block(block):
-    """takes the value of all the key from a block and joins them with $"""
-    return '$'.join([str(block[key]) for key in block])
+    """hashes a block & converts it into string"""
+    return hashlib.sha256(json.dumps(block, sort_keys= True).encode()).hexdigest()
+
+
+def valid_proof(transactions, last_hash, proof):
+    guess = (str(transactions)+str(last_hash)+str(proof)).encode()
+    guess_hash = hashlib.sha256(guess).hexdigest()
+    return guess_hash[0:2] == '00'
+
+
+def proof_of_work():
+    last_block = blockchain[-1]
+    last_hash = hash_block(last_block)
+    proof = 0
+    while not valid_proof(open_transaction, last_hash, proof):
+        proof += 1
+    return proof
 
 
 def mine_block():
     """Adds all the open transaction to the blockchain"""
     last_block = blockchain[-1]
     hash_value = hash_block(last_block)
-    reward_block = {
-        'sender': 'SYSTEM',
-        'receiver': owner,
-        'amount': MINING_REWARD
-    }
+    proof = proof_of_work()
+
+    reward_block = OrderedDict([
+        ('sender', 'SYSTEM'),
+        ('receiver', owner),
+        ('amount', MINING_REWARD)
+    ])
     new_balance = (get_balance(owner)) + 10
     print('New balance = ' + str(new_balance))
     copied_tx = open_transaction[:]
@@ -85,7 +108,8 @@ def mine_block():
     block = {
         'last_hash': hash_value,
         'transaction_index': len(blockchain),
-        'transactions': copied_tx
+        'transactions': copied_tx,
+        'proof': proof
     }
     blockchain.append(block)
     return True
@@ -107,6 +131,9 @@ def verify():
         if index == 0:
             continue
         if block['last_hash'] != hash_block(blockchain[index-1]):
+            return False
+        if not valid_proof (block['transactions'][:-1], block['last_hash'], block['proof']):
+            print('INVALID PROOF OF WORK')
             return False
         return True
 
@@ -166,8 +193,6 @@ while blockchain_status:
         print('-'*120)
         print('INVALID BLOCKCHAIN')
         blockchain_status = invalid()
-
-
 
 print('.'*120)
 print("Done!!!!")
