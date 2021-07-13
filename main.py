@@ -1,12 +1,13 @@
-from functools import singledispatchmethod
 import hashlib
 import json
 from collections import OrderedDict
 
+import hash_util
+
 # GENESIS_BLOCK to initialize blockchain
 GENESIS_BLOCK = {
     'last_hash': '',
-    'index': 0,
+    'transaction_index': 0,
     'transactions': [],
     'proof': 1
 }
@@ -69,31 +70,31 @@ def check_balance(transaction):
     return user_balance >= transaction['amount']
 
 
-def hash_block(block):
-    """hashes a block & converts it into string"""
-    return hashlib.sha256(json.dumps(block, sort_keys= True).encode()).hexdigest()
+# def hash_block(block):
+#     """hashes a block & converts it into string"""
+#     return hashlib.sha256(json.dumps(block, sort_keys= True).encode()).hexdigest()
 
 
-def valid_proof(transactions, last_hash, proof):
-    guess = (str(transactions)+str(last_hash)+str(proof)).encode()
-    guess_hash = hashlib.sha256(guess).hexdigest()
-    return guess_hash[0:2] == '00'
+# def valid_proof(transactions, last_hash, proof):
+#     guess = (str(transactions)+str(last_hash)+str(proof)).encode()
+#     guess_hash = hashlib.sha256(guess).hexdigest()
+#     return guess_hash[0:2] == '00'
 
 
-def proof_of_work():
-    last_block = blockchain[-1]
-    last_hash = hash_block(last_block)
-    proof = 0
-    while not valid_proof(open_transaction, last_hash, proof):
-        proof += 1
-    return proof
+# def proof_of_work():
+#     last_block = blockchain[-1]
+#     last_hash = hash_util.hash_block(last_block)
+#     proof = 0
+#     while not valid_proof(open_transaction, last_hash, proof):
+#         proof += 1
+#     return proof
 
 
 def mine_block():
     """Adds all the open transaction to the blockchain"""
     last_block = blockchain[-1]
-    hash_value = hash_block(last_block)
-    proof = proof_of_work()
+    hash_value = hash_util.hash_block(last_block)
+    proof = hash_util.proof_of_work(blockchain, open_transaction)
 
     reward_block = OrderedDict([
         ('sender', 'SYSTEM'),
@@ -130,9 +131,9 @@ def verify():
     for (index, block) in enumerate(blockchain):
         if index == 0:
             continue
-        if block['last_hash'] != hash_block(blockchain[index-1]):
+        if block['last_hash'] != hash_util.hash_block(blockchain[index-1]):
             return False
-        if not valid_proof (block['transactions'][:-1], block['last_hash'], block['proof']):
+        if not hash_util.valid_proof (block['transactions'][:-1], block['last_hash'], block['proof']):
             print('INVALID PROOF OF WORK')
             return False
         return True
