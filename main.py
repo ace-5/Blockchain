@@ -1,5 +1,4 @@
-import hashlib
-import json
+
 from collections import OrderedDict
 
 import hash_util
@@ -18,6 +17,11 @@ open_transaction = []
 owner = input('ENTER YOUR NAME: ')
 participants = {owner}
 
+def save_data():
+    with open('blockchain.txt', mode='w') as f:
+        f.write(str(blockchain))
+        f.write('\n')
+        f.write(str(open_transaction))
 
 def transaction_details():
     """takes the details of tx (amount, recipient)"""
@@ -68,26 +72,6 @@ def get_balance(participant):
 def check_balance(transaction):
     user_balance = get_balance(transaction['sender'])
     return user_balance >= transaction['amount']
-
-
-# def hash_block(block):
-#     """hashes a block & converts it into string"""
-#     return hashlib.sha256(json.dumps(block, sort_keys= True).encode()).hexdigest()
-
-
-# def valid_proof(transactions, last_hash, proof):
-#     guess = (str(transactions)+str(last_hash)+str(proof)).encode()
-#     guess_hash = hashlib.sha256(guess).hexdigest()
-#     return guess_hash[0:2] == '00'
-
-
-# def proof_of_work():
-#     last_block = blockchain[-1]
-#     last_hash = hash_util.hash_block(last_block)
-#     proof = 0
-#     while not valid_proof(open_transaction, last_hash, proof):
-#         proof += 1
-#     return proof
 
 
 def mine_block():
@@ -156,12 +140,14 @@ while blockchain_status:
     print('h. TO MANIPULATE CHAIN')
     print('q. QUIT')
     choice = input('ENTER YOUR CHOICE:  ')
+
     if choice == '1':
         tx_data = transaction_details()
         amount, receiver, sender = tx_data
         if add_transaction(receiver, amount, sender):
             print('TRANSACTION SUCCESSFUL')
             print('New balance = {:.3f}'.format((get_balance(owner))))
+            save_data()
         else:
             print('INSUFFICIENT FUND')
             print('Total balance = {:.3f}'.format((get_balance(owner))))
@@ -169,6 +155,7 @@ while blockchain_status:
     elif choice == '2':
         if mine_block():
             open_transaction = []
+            save_data()
 
     elif choice == '3':
         view_transaction()
