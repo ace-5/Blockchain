@@ -1,4 +1,4 @@
-
+import json
 from collections import OrderedDict
 
 import hash_util
@@ -17,18 +17,32 @@ open_transaction = []
 owner = input('ENTER YOUR NAME: ')
 participants = {owner}
 
+def load_data():
+    with open('blockchain.txt', mode= 'r') as f:
+       blockchain_info = f.readlines()
+       global blockchain
+       global open_transaction
+       blockchain = json.loads(blockchain_info[0][:-1])
+       open_transaction = json.loads(blockchain_info[1])
+
+
+load_data()
+
+
 def save_data():
     with open('blockchain.txt', mode='w') as f:
-        f.write(str(blockchain))
+        f.write(json.dumps(blockchain))
         f.write('\n')
-        f.write(str(open_transaction))
+        f.write(json.dumps(open_transaction))
+
+
 
 def transaction_details():
     """takes the details of tx (amount, recipient)"""
     sender = owner
     amount = float(input('ENTER AMOUNT TO BE TRANSACTED: '))
     received_by = input('ENTER THE RECEIVER OF THE COIN: ')
-    return amount, received_by, sender
+    return  sender, amount, received_by
 
 
 def add_transaction(receiver, amount, sender):
@@ -71,7 +85,7 @@ def get_balance(participant):
 
 def check_balance(transaction):
     user_balance = get_balance(transaction['sender'])
-    return user_balance >= transaction['amount']
+    return user_balance >= transaction['amount'] 
 
 
 def mine_block():
@@ -124,7 +138,6 @@ def verify():
 
 
 def invalid():
-    print(blockchain)
     print('-'*120)
     print('Something went wrong. Please try again')
     return False
@@ -143,7 +156,7 @@ while blockchain_status:
 
     if choice == '1':
         tx_data = transaction_details()
-        amount, receiver, sender = tx_data
+        sender, amount, receiver = tx_data
         if add_transaction(receiver, amount, sender):
             print('TRANSACTION SUCCESSFUL')
             print('New balance = {:.3f}'.format((get_balance(owner))))
