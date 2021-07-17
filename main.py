@@ -17,13 +17,14 @@ open_transaction = []
 owner = input('ENTER YOUR NAME: ')
 participants = {owner}
 
+
 def load_data():
-    with open('blockchain.txt', mode= 'r') as f:
-       blockchain_info = f.readlines()
-       global blockchain
-       global open_transaction
-       blockchain = json.loads(blockchain_info[0][:-1])
-       open_transaction = json.loads(blockchain_info[1])
+    with open('blockchain.txt', mode='r') as f:
+        blockchain_info = f.readlines()
+        global blockchain
+        global open_transaction
+        blockchain = json.loads(blockchain_info[0][:-1])
+        open_transaction = json.loads(blockchain_info[1])
 
 
 load_data()
@@ -36,13 +37,12 @@ def save_data():
         f.write(json.dumps(open_transaction))
 
 
-
 def transaction_details():
     """takes the details of tx (amount, recipient)"""
     sender = owner
     amount = float(input('ENTER AMOUNT TO BE TRANSACTED: '))
     received_by = input('ENTER THE RECEIVER OF THE COIN: ')
-    return  sender, amount, received_by
+    return sender, amount, received_by
 
 
 def add_transaction(receiver, amount, sender):
@@ -66,12 +66,12 @@ def get_balance(participant):
     tx_sender = [[tx['amount'] for tx in block['transactions']
                   if tx['sender'] == participant] for block in blockchain]
     pending_balance = [tx['amount']
-                       for tx in open_transaction if participant == tx['sender']]
+                       for tx in open_transaction if tx['sender'] == participant]
     tx_sender.append(pending_balance)
     amount_sent = 0
     for tx in tx_sender:
         if len(tx) > 0:
-            amount_sent += tx[0]
+            amount_sent += sum(tx)
 
 # make a list of all tx in blockchain where owner is receiver
     tx_receiver = [[tx['amount'] for tx in block['transactions']
@@ -79,13 +79,13 @@ def get_balance(participant):
     amount_received = 0
     for tx in tx_receiver:
         if len(tx) > 0:
-            amount_received += tx[0]
+            amount_received += sum(tx)
     return amount_received - amount_sent
 
 
 def check_balance(transaction):
     user_balance = get_balance(transaction['sender'])
-    return user_balance >= transaction['amount'] 
+    return user_balance >= transaction['amount']
 
 
 def mine_block():
@@ -131,7 +131,7 @@ def verify():
             continue
         if block['last_hash'] != hash_util.hash_block(blockchain[index-1]):
             return False
-        if not hash_util.valid_proof (block['transactions'][:-1], block['last_hash'], block['proof']):
+        if not hash_util.valid_proof(block['transactions'][:-1], block['last_hash'], block['proof']):
             print('INVALID PROOF OF WORK')
             return False
         return True
