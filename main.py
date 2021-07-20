@@ -19,12 +19,22 @@ participants = {owner}
 
 
 def load_data():
-    with open('blockchain.txt', mode='r') as f:
-        blockchain_info = f.readlines()
-        global blockchain
-        global open_transaction
-        blockchain = json.loads(blockchain_info[0][:-1])
-        open_transaction = json.loads(blockchain_info[1])
+    global blockchain
+    global open_transaction
+    try:
+        with open('blockchain.txt', mode='r') as f:
+            blockchain_info = f.readlines()
+            blockchain = json.loads(blockchain_info[0][:-1])
+            open_transaction = json.loads(blockchain_info[1])
+    except:
+        GENESIS_BLOCK = {
+        'last_hash': '',
+        'transaction_index': 0,
+        'transactions': [],
+        'proof': 1
+        }
+        blockchain = [GENESIS_BLOCK]
+        open_transaction = []
 
 
 load_data()
